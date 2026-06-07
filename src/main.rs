@@ -1,8 +1,13 @@
-use rsraw::RawImage;
+use std::env;
 
 fn main() {
-    let f = std::fs::read("raws/test.RAF").unwrap();
-    let raw = RawImage::open(&f).unwrap();
-    let info = raw.full_info();
-    println!("Camera: {} {}", info.make, info.model);
+    let args: Vec<_> = env::args().collect();
+    if args.len() != 2 {
+        println!("Usage: {} <file>", args[0]);
+        std::process::exit(2);
+    }
+    let file = &args[1];
+    let image = rawloader::decode_file(file).unwrap();
+
+    println!("Model: {}", image.model);
 }

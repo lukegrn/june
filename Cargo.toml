@@ -5,4 +5,4 @@ edition = "2024"
 description = "A deterministic, accurate film conversion tool"
 
 [dependencies]
-rsraw = "0.1"
+rawloader = "0.37.1"
