@@ -6,3 +6,4 @@ description = "A deterministic, accurate film conversion tool"
 
 [dependencies]
 rawloader = "0.37.1"
+tiff = "0.11.3"
