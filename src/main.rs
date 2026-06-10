@@ -1,6 +1,7 @@
-use std::{env, fs::File};
+use std::{env, fs};
 
-use tiff::encoder::{colortype, TiffEncoder};
+use rsraw::{BIT_DEPTH_16, RawImage};
+use tiff::encoder::{TiffEncoder, colortype};
 
 fn main() {
     let args: Vec<_> = env::args().collect();
@@ -9,31 +10,19 @@ fn main() {
         std::process::exit(2);
     }
     let file = &args[1];
-    let image = rawloader::decode_file(file).unwrap();
-    let (width, height) = (image.width, image.height);
+    let data = fs::read(file).unwrap();
+    let mut image = RawImage::open(&data).unwrap();
 
-    println!("Model: {}", image.model);
+    let info = image.full_info();
 
-    let file = File::create("target/out.tiff").unwrap();
-    let mut tiff = TiffEncoder::new(file).unwrap();
-    let mut img_bytes = Vec::<u8>::new();
+    println!("Camera: {} {}", info.make, info.model);
+    image.unpack().unwrap();
 
-    if let rawloader::RawImageData::Integer(data) = image.data {
-        for pixel in data {
-            let pixh = (pixel >> 8) as u8;
-            // let pixl = (pixel & 0x0ff) as u8;
-            img_bytes.push(pixh);
-            img_bytes.push(pixh);
-            img_bytes.push(pixh);
-        }
-    } else {
-        eprintln!("Don't know how to process non-integer raw files");
-    }
+    let processed = image.process::<BIT_DEPTH_16>().unwrap();
 
-    tiff.write_image::<colortype::RGB8>(
-        width.try_into().unwrap(),
-        height.try_into().unwrap(),
-        &img_bytes,
-    )
-    .unwrap();
+    let out = fs::File::create("target/out.tiff").unwrap();
+    let mut tiff = TiffEncoder::new(out).unwrap();
+
+    tiff.write_image::<colortype::RGB16>(info.height, info.width, &processed)
+        .unwrap();
 }
